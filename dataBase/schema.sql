@@ -4,59 +4,47 @@ USE travel_app;
 ----------------------------------------------------
 -- DROP TABLES (איפוס מסד נתונים)
 ----------------------------------------------------
+SET FOREIGN_KEY_CHECKS = 0;
 
-DROP TABLE IF EXISTS media CASCADE;
-DROP TABLE IF EXISTS reviews CASCADE;
-DROP TABLE IF EXISTS favorites CASCADE;
-DROP TABLE IF EXISTS payments CASCADE;
-DROP TABLE IF EXISTS events CASCADE;
-DROP TABLE IF EXISTS payment_methods CASCADE;
-DROP TABLE IF EXISTS places CASCADE;
-DROP TABLE IF EXISTS credentials CASCADE;
-DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS media;
+DROP TABLE IF EXISTS reviews;
+DROP TABLE IF EXISTS favorites;
+DROP TABLE IF EXISTS payments;
+DROP TABLE IF EXISTS events;
+DROP TABLE IF EXISTS payment_methods;
+DROP TABLE IF EXISTS places;
+DROP TABLE IF EXISTS credentials;
+DROP TABLE IF EXISTS users;
+
+SET FOREIGN_KEY_CHECKS = 1;
 
 ----------------------------------------------------
--- USERS
+-- CREATE TABLES
 ----------------------------------------------------
 CREATE TABLE users (
-    user_id SERIAL PRIMARY KEY,
+    user_id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) NOT NULL UNIQUE,
     email VARCHAR(100) NOT NULL UNIQUE,
-    user_type VARCHAR(20) NOT NULL
-        CHECK (user_type IN ('regular', 'business', 'admin'))
+    user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('regular', 'business', 'admin'))
 );
 
-----------------------------------------------------
--- CREDENTIALS
-----------------------------------------------------
 CREATE TABLE credentials (
-    user_id INT PRIMARY KEY
-        REFERENCES users(user_id) ON DELETE CASCADE,
+    user_id INT PRIMARY KEY REFERENCES users(user_id) ON DELETE CASCADE,
     password_hash VARCHAR(255) NOT NULL
 );
 
-----------------------------------------------------
--- PAYMENT METHODS (כרטיס שמור למשתמש - פעם אחת בלבד)
-----------------------------------------------------
 CREATE TABLE payment_methods (
-    payment_method_id SERIAL PRIMARY KEY,
-
-    user_id INT NOT NULL UNIQUE
-        REFERENCES users(user_id) ON DELETE CASCADE,
-
+    payment_method_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL UNIQUE REFERENCES users(user_id) ON DELETE CASCADE,
     card_holder_name VARCHAR(100) NOT NULL,
     card_last4 CHAR(4) NOT NULL,
     expiry_month INT NOT NULL,
     expiry_year INT NOT NULL,
-
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-----------------------------------------------------
--- PLACES
-----------------------------------------------------
 CREATE TABLE places (
-    place_id SERIAL PRIMARY KEY,
+    place_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     description TEXT,
     category VARCHAR(50) NOT NULL,
@@ -65,101 +53,87 @@ CREATE TABLE places (
     is_approved BOOLEAN DEFAULT FALSE
 );
 
-----------------------------------------------------
--- EVENTS
-----------------------------------------------------
 CREATE TABLE events (
-    event_id SERIAL PRIMARY KEY,
-
-    business_id INT NOT NULL
-        REFERENCES users(user_id) ON DELETE CASCADE,
-
-    place_id INT NOT NULL
-        REFERENCES places(place_id) ON DELETE CASCADE,
-
+    event_id INT AUTO_INCREMENT PRIMARY KEY,
+    business_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    place_id INT NOT NULL REFERENCES places(place_id) ON DELETE CASCADE,
     title VARCHAR(100) NOT NULL,
     description TEXT,
     event_date TIMESTAMP NOT NULL,
-
     start_date TIMESTAMP,
     end_date TIMESTAMP,
-
     is_active BOOLEAN DEFAULT FALSE,
-
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-----------------------------------------------------
--- PAYMENTS (דמה - ללא סליקה אמיתית)
-----------------------------------------------------
 CREATE TABLE payments (
-    payment_id SERIAL PRIMARY KEY,
-
-    event_id INT NOT NULL
-        REFERENCES events(event_id) ON DELETE CASCADE,
-
-    payment_method_id INT
-        REFERENCES payment_methods(payment_method_id),
-
+    payment_id INT AUTO_INCREMENT PRIMARY KEY,
+    event_id INT NOT NULL REFERENCES events(event_id) ON DELETE CASCADE,
+    payment_method_id INT REFERENCES payment_methods(payment_method_id),
     amount DECIMAL(10,2) NOT NULL,
-
-    payment_status VARCHAR(20) NOT NULL
-        CHECK (payment_status IN ('pending', 'completed', 'failed')),
-
+    payment_status VARCHAR(20) NOT NULL CHECK (payment_status IN ('pending', 'completed', 'failed')),
     paid_at TIMESTAMP,
-
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-----------------------------------------------------
--- FAVORITES
-----------------------------------------------------
 CREATE TABLE favorites (
-    favorite_id SERIAL PRIMARY KEY,
-
-    user_id INT NOT NULL
-        REFERENCES users(user_id) ON DELETE CASCADE,
-
-    place_id INT NOT NULL
-        REFERENCES places(place_id) ON DELETE CASCADE,
-
+    favorite_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    place_id INT NOT NULL REFERENCES places(place_id) ON DELETE CASCADE,
     UNIQUE(user_id, place_id)
 );
 
-----------------------------------------------------
--- REVIEWS
-----------------------------------------------------
 CREATE TABLE reviews (
-    review_id SERIAL PRIMARY KEY,
-
-    user_id INT NOT NULL
-        REFERENCES users(user_id) ON DELETE CASCADE,
-
-    place_id INT NOT NULL
-        REFERENCES places(place_id) ON DELETE CASCADE,
-
+    review_id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(user_id) ON DELETE CASCADE,
+    place_id INT NOT NULL REFERENCES places(place_id) ON DELETE CASCADE,
     rating INT NOT NULL CHECK (rating BETWEEN 1 AND 5),
     comment TEXT,
-
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
-----------------------------------------------------
--- MEDIA
-----------------------------------------------------
 CREATE TABLE media (
-    media_id SERIAL PRIMARY KEY,
-
-    place_id INT
-        REFERENCES places(place_id) ON DELETE CASCADE,
-
-    user_id INT
-        REFERENCES users(user_id) ON DELETE SET NULL,
-
-    media_type VARCHAR(20) NOT NULL
-        CHECK (media_type IN ('image', 'video', 'audio')),
-
+    media_id INT AUTO_INCREMENT PRIMARY KEY,
+    place_id INT REFERENCES places(place_id) ON DELETE CASCADE,
+    user_id INT REFERENCES users(user_id) ON DELETE SET NULL,
+    media_type VARCHAR(20) NOT NULL CHECK (media_type IN ('image', 'video', 'audio')),
     media_url VARCHAR(255) NOT NULL,
-
     uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+----------------------------------------------------
+-- INSERT DATA
+----------------------------------------------------
+INSERT INTO users (user_id, username, email, user_type) VALUES
+(1, 'admin', 'admin@test.com', 'admin'),
+(2, 'business_user', 'biz@test.com', 'business'),
+(3, 'regular_user', 'user@test.com', 'regular');
+
+INSERT INTO credentials (user_id, password_hash) VALUES
+(1, 'hashed_password_admin'),
+(2, 'hashed_password_business'),
+(3, 'hashed_password_user');
+
+INSERT INTO payment_methods (payment_method_id, user_id, card_holder_name, card_last4, expiry_month, expiry_year) VALUES
+(1, 2, 'Business Owner', '1234', 12, 2028);
+
+INSERT INTO places (place_id, name, description, category, latitude, longitude, is_approved) VALUES
+(1, 'Beach Bar', 'A fun beach bar with music and drinks', 'bar', 32.0853, 34.7818, TRUE),
+(2, 'City Museum', 'Modern art and history museum', 'museum', 32.0809, 34.7806, TRUE);
+
+INSERT INTO events (event_id, business_id, place_id, title, description, event_date, start_date, end_date, is_active) VALUES
+(1, 2, 1, 'Summer Party', 'DJ night at the beach bar', '2026-07-15 20:00:00', '2026-07-01 00:00:00', '2026-07-15 23:59:00', TRUE),
+(2, 2, 2, 'Art Night', 'Evening of modern art exhibitions', '2026-07-20 19:00:00', '2026-07-05 00:00:00', '2026-07-20 23:59:00', TRUE);
+
+INSERT INTO payments (payment_id, event_id, payment_method_id, amount, payment_status, paid_at) VALUES
+(1, 1, 1, 50.00, 'completed', CURRENT_TIMESTAMP),
+(2, 2, 1, 70.00, 'completed', CURRENT_TIMESTAMP);
+
+INSERT INTO favorites (favorite_id, user_id, place_id) VALUES
+(1, 3, 1);
+
+INSERT INTO reviews (review_id, user_id, place_id, rating, comment) VALUES
+(1, 3, 1, 5, 'Amazing place, great vibe!');
+
+INSERT INTO media (media_id, place_id, user_id, media_type, media_url) VALUES
+(1, 1, 3, 'image', 'https://example.com/image1.jpg');
