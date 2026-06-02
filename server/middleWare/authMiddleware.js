@@ -1,4 +1,12 @@
 import jwt from 'jsonwebtoken';
+import {
+    NO_TOKEN,
+    TOKEN_EXPIRED,
+    INVALID_TOKEN,
+    ACCESS_DENIED,
+    INSUFFICIENT_PERMISSIONS,
+    INTERNAL_SERVER_ERROR
+} from '../const/errorConst.js';
 
 const SECRET = process.env.JWT_SECRET;
 
@@ -11,33 +19,33 @@ const ROLE_HIERARCHY = {
 export const authenticateToken = (req, res, next) => {
     try {
         const token = req.headers['authorization']?.split(' ')[1];
-        if (!token) return res.status(401).json({ error: 'אין טוקן' });
+        if (!token) return res.status(NO_TOKEN.status).json({ error: NO_TOKEN.message });
 
         req.user = jwt.verify(token, SECRET);
         next();
     } catch (err) {
         if (err.name === 'TokenExpiredError')
-            return res.status(401).json({ error: 'טוקן פג תוקף' });
+            return res.status(TOKEN_EXPIRED.status).json({ error: TOKEN_EXPIRED.message });
         if (err.name === 'JsonWebTokenError')
-            return res.status(403).json({ error: 'טוקן לא תקין' });
+            return res.status(INVALID_TOKEN.status).json({ error: INVALID_TOKEN.message });
 
-        res.status(500).json({ error: 'שגיאה בשרת' });
+        res.status(INTERNAL_SERVER_ERROR.status).json({ error: INTERNAL_SERVER_ERROR.message });
     }
 };
 
 export const requireRole = (role) => (req, res, next) => {
     try {
         if (!req.user)
-            return res.status(403).json({ error: 'שגיאה' });
+            return res.status(ACCESS_DENIED.status).json({ error: ACCESS_DENIED.message });
 
         const requiredLevel = ROLE_HIERARCHY[role];
         const userLevel = ROLE_HIERARCHY[req.user.role];
 
         if (!userLevel || userLevel < requiredLevel)
-            return res.status(403).json({ error: 'אין לך הרשאה' });
+            return res.status(INSUFFICIENT_PERMISSIONS.status).json({ error: INSUFFICIENT_PERMISSIONS.message });
 
         next();
     } catch (err) {
-        res.status(500).json({ error: 'שגיאה בשרת' });
+        res.status(INTERNAL_SERVER_ERROR.status).json({ error: INTERNAL_SERVER_ERROR.message });
     }
 };
