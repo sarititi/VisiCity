@@ -4,8 +4,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 import authRoutes from './routes/authRoutes.js';
-// import userRoutes from './routes/userRoutes.js';
-// import productRoutes from './routes/productRoutes.js'; -- הוסיפי routes נוספים כאן
+import placeRoutes from './routes/placeRoute.js';
 
 const app = express();
 
@@ -17,8 +16,7 @@ app.use(express.json());
 
 // Routes
 app.use('/', authRoutes);
-// app.use('/users', userRoutes);
-// app.use('/products', productRoutes);
+app.use('/places', placeRoutes);
 
 // 404
 app.use((req, res) => {
