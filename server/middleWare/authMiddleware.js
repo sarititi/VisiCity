@@ -49,3 +49,19 @@ export const requireRole = (role) => (req, res, next) => {
         res.status(INTERNAL_SERVER_ERROR.status).json({ error: INTERNAL_SERVER_ERROR.message });
     }
 };
+
+export const authorizePlaceModification = (req, res, next) => {
+    try {
+        const { created_by } = req.body;
+        const isOwner = req.user.id === created_by;
+        const isAdmin = req.user.role === 'admin';
+
+        if (!isOwner && !isAdmin) {
+            return res.status(403).json({ error: 'Only the place creator or an admin can modify this place' });
+        }
+
+        next();
+    } catch (err) {
+        res.status(INTERNAL_SERVER_ERROR.status).json({ error: INTERNAL_SERVER_ERROR.message });
+    }
+};

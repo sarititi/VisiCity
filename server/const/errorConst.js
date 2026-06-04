@@ -34,7 +34,7 @@ export const TOKEN_EXPIRED = {
 
 export const INVALID_TOKEN = {
     message: 'Invalid token',
-    status: 403
+    status: 401
 };
 
 export const ACCESS_DENIED = {
@@ -44,6 +44,18 @@ export const ACCESS_DENIED = {
 
 export const INSUFFICIENT_PERMISSIONS = {
     message: 'Insufficient permissions',
+    status: 403
+};
+
+// ===== Place Service Errors =====
+
+export const PLACE_NOT_FOUND = {
+    message: 'Place not found',
+    status: 404
+};
+
+export const UNAUTHORIZED_PLACE_MODIFICATION = {
+    message: 'Only the place creator or an admin can modify this place',
     status: 403
 };
 

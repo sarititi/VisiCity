@@ -14,11 +14,16 @@ app.use(cors({
 
 app.use(express.json());
 
+app.get('/', (req, res) => {
+  res.redirect('/places');
+});
+
 // Routes
-app.use('/', authRoutes);
+app.use('/auth', authRoutes);
 app.use('/places', placeRoutes);
 
-// 404
+
+
 app.use((req, res) => {
     res.status(404).json({ error: 'Route not found' });
 });
